@@ -372,6 +372,126 @@
       color: var(--accent);
     }
     
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+    
+    .modal {
+      background: var(--bg-dark);
+      border-radius: 15px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      border: 1px solid rgba(0, 247, 255, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+      text-align: center;
+      font-family: 'Orbitron', sans-serif;
+    }
+    
+    .modal-input-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .modal-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-dim);
+    }
+    
+    .modal-input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: rgba(20, 20, 40, 0.8);
+      border: 1px solid rgba(0, 247, 255, 0.2);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Exo 2', sans-serif;
+      transition: all 0.3s;
+    }
+    
+    .modal-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(0, 247, 255, 0.3);
+      outline: none;
+    }
+    
+    .modal-select {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: rgba(20, 20, 40, 0.8);
+      border: 1px solid rgba(0, 247, 255, 0.2);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Exo 2', sans-serif;
+      transition: all 0.3s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%23a0a0c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 12px;
+    }
+    
+    .modal-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(0, 247, 255, 0.3);
+      outline: none;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    
+    .modal-button {
+      padding: 0.8rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Exo 2', sans-serif;
+      border: none;
+    }
+    
+    .modal-button-cancel {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+    
+    .modal-button-cancel:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .modal-button-confirm {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: var(--bg-darker);
+      font-weight: 600;
+    }
+    
+    .modal-button-confirm:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 247, 255, 0.3);
+    }
+    
     /* Animations */
     @keyframes fadeIn {
       to { opacity: 1; transform: translateY(0); }
@@ -461,7 +581,7 @@
       </div>
       <div class="status">
         <div class="status-indicator"></div>
-        <span>Connected to Nexus 2.1</span>
+        <span id="model-status">Connected to Nexus 2.1</span>
       </div>
     </header>
     
@@ -507,6 +627,32 @@
     const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
     const STORAGE_KEY = 'nexus-ai-conversations';
     
+    // Available models
+    const MODELS = {
+      "Nexus 2.1": "google/gemini-2.5-flash-lite-preview-06-17",
+      "Cypher Alpha": "openrouter/cypher-alpha:free",
+      "Mistral: Mistral Small 3.2 24B": "mistralai/mistral-small-3.2-24b-instruct:free",
+      "Kimi Dev 72b": "moonshotai/kimi-dev-72b:free",
+      "Deepseek R1 0528 Qwen3 8B": "deepseek/deepseek-r1-0528-qwen3-8b:free",
+      "DeepSeek: R1 0528": "deepseek/deepseek-r1-0528:free",
+      "Sarvam AI Sarvam-M": "sarvamai/sarvam-m:free",
+      "Mistral: Devstral Small": "mistralai/devstral-small:free",
+      "Google: Gemma 3n 4B": "google/gemma-3n-e4b-it:free",
+      "Qwen: Qwen3 30B A3B": "qwen/qwen3-30b-a3b:free",
+      "Qwen: Qwen3 8B": "qwen/qwen3-8b:free",
+      "Microsoft: MAI DS R1": "microsoft/mai-ds-r1:free",
+      "Shisa AI: Shisa V2 Llama 3.3 70B": "shisa-ai/shisa-v2-llama-3.3-70b:free",
+      "ArliAI: QwQ 32B RpR v1": "arliai/qwq-32b-arliai-rpr-v1:free",
+      "Agentica: Deepcoder 14B Preview": "agentica-org/deepcoder-14b-preview:free",
+      "Moonshot AI: Kimi VL A3B Thinking": "moonshotai/kimi-vl-a3b-thinking:free",
+      "Meta: Llama 4 Maverick 8B": "meta-llama/llama-4-maverick:free",
+      "Meta: Llama 4 Scout 8B": "meta-llama/llama-4-scout:free",
+      "Qwerky 72B": "featherless/qwerky-72b:free",
+      "Reka: Flash 3": "rekaai/reka-flash-3:free",
+      "Nous: DeepHermes 3 Llama 3 8B Preview": "nousresearch/deephermes-3-llama-3-8b-preview:free",
+      "Dolphin3.0 R1 Mistral 24B": "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+    };
+    
     // Système de conversations multiples
     let conversations = {};
     let currentConversationId = '';
@@ -534,6 +680,7 @@
         conversations[newId] = {
           id: newId,
           name: 'New chat',
+          model: "google/gemini-2.5-flash-lite-preview-06-17",
           messages: [
             { 
               role: "assistant", 
@@ -545,11 +692,23 @@
         currentConversationId = newId;
         saveConversations();
       }
+      
+      // Update model status display
+      updateModelStatus();
     }
     
     // Sauvegarder les conversations dans le localStorage
     function saveConversations() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    }
+    
+    // Update the model status display
+    function updateModelStatus() {
+      const currentConv = conversations[currentConversationId];
+      if (currentConv) {
+        const modelName = Object.keys(MODELS).find(key => MODELS[key] === currentConv.model) || "Nexus 2.1";
+        document.getElementById('model-status').textContent = `Connected to ${modelName}`;
+      }
     }
     
     // Initialisation de l'interface
@@ -563,7 +722,55 @@
         }
       });
       
-      document.getElementById('add-tab').addEventListener('click', addNewConversation);
+      document.getElementById('add-tab').addEventListener('click', showNewChatModal);
+    }
+    
+    // Show modal for new chat creation
+    function showNewChatModal() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal">
+          <div class="modal-title">Create New Chat</div>
+          <div class="modal-input-group">
+            <label class="modal-label">Chat Name</label>
+            <input type="text" class="modal-input" id="new-chat-name" placeholder="My new chat" value="Chat ${Object.keys(conversations).length + 1}">
+          </div>
+          <div class="modal-input-group">
+            <label class="modal-label">AI Model</label>
+            <select class="modal-select" id="new-chat-model">
+              ${Object.keys(MODELS).map(name => 
+                `<option value="${MODELS[name]}" ${MODELS[name] === "google/gemini-2.5-flash-lite-preview-06-17" ? 'selected' : ''}>${name}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="modal-buttons">
+            <button class="modal-button modal-button-cancel" id="cancel-new-chat">Cancel</button>
+            <button class="modal-button modal-button-confirm" id="confirm-new-chat">Create</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Event listeners for modal buttons
+      document.getElementById('cancel-new-chat').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+      
+      document.getElementById('confirm-new-chat').addEventListener('click', () => {
+        const name = document.getElementById('new-chat-name').value.trim() || `Chat ${Object.keys(conversations).length + 1}`;
+        const model = document.getElementById('new-chat-model').value;
+        createNewConversation(name, model);
+        document.body.removeChild(modal);
+      });
+      
+      // Close modal when clicking outside
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+        }
+      });
     }
     
     // Rendu des onglets
@@ -652,20 +859,26 @@
       renderTabs();
       renderMessages();
       saveConversations();
+      updateModelStatus();
       
       // Focus sur le champ de saisie
       document.getElementById('prompt').focus();
     }
     
-    // Ajouter une nouvelle conversation
-    function addNewConversation() {
+    // Create new conversation with specified name and model
+    function createNewConversation(name, model) {
       const newId = 'chat-' + Date.now();
-      const newName = 'Chat ' + (Object.keys(conversations).length + 1);
       
       conversations[newId] = {
         id: newId,
-        name: newName,
-        messages: [],
+        name: name,
+        model: model,
+        messages: [
+          { 
+            role: "assistant", 
+            content: "Hello! I'm Nexus. How can I help you today?"
+          }
+        ],
         active: true
       };
       
@@ -678,9 +891,18 @@
       renderTabs();
       renderMessages();
       saveConversations();
+      updateModelStatus();
       
       // Focus sur le champ de saisie
       document.getElementById('prompt').focus();
+    }
+    
+    // Ajouter une nouvelle conversation (old version, now replaced by createNewConversation)
+    function addNewConversation() {
+      createNewConversation(
+        'Chat ' + (Object.keys(conversations).length + 1),
+        "google/gemini-2.5-flash-lite-preview-06-17"
+      );
     }
     
     // Fermer une conversation
@@ -701,6 +923,7 @@
       saveConversations();
       renderTabs();
       renderMessages();
+      updateModelStatus();
     }
     
     // Renommer une conversation
@@ -740,7 +963,7 @@
             "X-Title": "Nexus, trained by GraphStats"
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash-lite-preview-06-17",
+            model: currentConv.model || "google/gemini-2.5-flash-lite-preview-06-17",
             messages: currentConv.messages
           })
         });
