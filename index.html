@@ -196,6 +196,7 @@
       flex: 1;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     
     #messages {
@@ -264,6 +265,9 @@
       background: rgba(10, 10, 20, 0.7);
       border-top: 1px solid rgba(255, 255, 255, 0.1);
       gap: 1rem;
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
     }
     
     #prompt {
@@ -564,7 +568,7 @@
         });
       }
       
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      scrollToBottom();
     }
     
     // Basculer entre les conversations
@@ -624,7 +628,7 @@
       promptInput.focus();
       
       document.getElementById('typing').style.display = 'flex';
-      document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+      scrollToBottom();
       
       try {
         const res = await fetch(apiUrl, {
@@ -655,6 +659,7 @@
         addMessageToUI(errorMessage);
       } finally {
         document.getElementById('typing').style.display = 'none';
+        scrollToBottom();
       }
     }
     
@@ -683,12 +688,18 @@
       `;
       
       messagesDiv.appendChild(messageDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
+      
       setTimeout(() => {
         messageDiv.style.opacity = '1';
         messageDiv.style.transform = 'translateY(0)';
       }, delay * 1000);
+      
+      scrollToBottom();
+    }
+    
+    function scrollToBottom() {
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
     
     function initParticles() {
