@@ -127,6 +127,9 @@
       transition: all 0.3s;
       position: relative;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
     
     .tab:hover {
@@ -149,6 +152,22 @@
       height: 2px;
       background: var(--primary);
       border-radius: 2px;
+    }
+    
+    .tab-close {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+      opacity: 0.5;
+    }
+    
+    .tab-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+      opacity: 1;
     }
     
     .add-tab {
@@ -486,26 +505,56 @@
   <script>
     const apiKey = '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'; // ⚠️ REMOVE IN PRODUCTION
     const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+    const STORAGE_KEY = 'nexus-ai-conversations';
     
     // Système de conversations multiples
-    let conversations = {
-      'chat-1': {
-        id: 'chat-1',
-        name: 'New chat',
-        messages: [
-          { 
-            role: "assistant", 
-            content: "Hello! I'm Nexus. How can I help you today?"
-          }
-        ],
-        active: true
-      }
-    };
+    let conversations = {};
+    let currentConversationId = '';
     
-    let currentConversationId = 'chat-1';
+    // Charger les conversations depuis le localStorage
+    function loadConversations() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        conversations = JSON.parse(saved);
+        
+        // Trouver la dernière conversation active
+        const activeConv = Object.values(conversations).find(conv => conv.active);
+        if (activeConv) {
+          currentConversationId = activeConv.id;
+        } else if (Object.keys(conversations).length > 0) {
+          // Si aucune n'est active, prendre la première
+          currentConversationId = Object.keys(conversations)[0];
+          conversations[currentConversationId].active = true;
+        }
+      }
+      
+      // Si aucune conversation n'existe, en créer une nouvelle
+      if (Object.keys(conversations).length === 0) {
+        const newId = 'chat-' + Date.now();
+        conversations[newId] = {
+          id: newId,
+          name: 'New chat',
+          messages: [
+            { 
+              role: "assistant", 
+              content: "Hello! I'm Nexus. How can I help you today?"
+            }
+          ],
+          active: true
+        };
+        currentConversationId = newId;
+        saveConversations();
+      }
+    }
+    
+    // Sauvegarder les conversations dans le localStorage
+    function saveConversations() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    }
     
     // Initialisation de l'interface
     function init() {
+      loadConversations();
       renderTabs();
       renderMessages();
       document.getElementById('prompt').addEventListener('keypress', function(e) {
@@ -525,10 +574,26 @@
       Object.values(conversations).forEach(conv => {
         const tab = document.createElement('div');
         tab.className = `tab ${conv.active ? 'active' : ''}`;
-        tab.textContent = conv.name;
         tab.dataset.conversationId = conv.id;
         
+        const tabName = document.createElement('span');
+        tabName.className = 'tab-name';
+        tabName.textContent = conv.name;
+        tab.appendChild(tabName);
+        
+        const closeBtn = document.createElement('div');
+        closeBtn.className = 'tab-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeConversation(conv.id);
+        });
+        tab.appendChild(closeBtn);
+        
         tab.addEventListener('click', () => switchConversation(conv.id));
+        
+        // Double-clic pour renommer
+        tab.addEventListener('dblclick', () => renameConversation(conv.id));
         
         tabsContainer.appendChild(tab);
       });
@@ -562,6 +627,7 @@
           role: "assistant",
           content: "Hello! I'm Nexus. How can I help you today?"
         });
+        saveConversations();
       } else {
         currentConv.messages.forEach((message, index) => {
           addMessageToUI(message, index * 0.1);
@@ -585,6 +651,10 @@
       // Mettre à jour l'interface
       renderTabs();
       renderMessages();
+      saveConversations();
+      
+      // Focus sur le champ de saisie
+      document.getElementById('prompt').focus();
     }
     
     // Ajouter une nouvelle conversation
@@ -607,9 +677,40 @@
       currentConversationId = newId;
       renderTabs();
       renderMessages();
+      saveConversations();
       
       // Focus sur le champ de saisie
       document.getElementById('prompt').focus();
+    }
+    
+    // Fermer une conversation
+    function closeConversation(conversationId) {
+      if (Object.keys(conversations).length <= 1) {
+        alert("You can't close the last conversation.");
+        return;
+      }
+      
+      delete conversations[conversationId];
+      
+      // Si on ferme la conversation active, activer la première disponible
+      if (conversationId === currentConversationId) {
+        currentConversationId = Object.keys(conversations)[0];
+        conversations[currentConversationId].active = true;
+      }
+      
+      saveConversations();
+      renderTabs();
+      renderMessages();
+    }
+    
+    // Renommer une conversation
+    function renameConversation(conversationId) {
+      const newName = prompt("Enter new chat name:", conversations[conversationId].name);
+      if (newName && newName.trim()) {
+        conversations[conversationId].name = newName.trim();
+        saveConversations();
+        renderTabs();
+      }
     }
     
     // Envoyer un message
@@ -660,6 +761,7 @@
       } finally {
         document.getElementById('typing').style.display = 'none';
         scrollToBottom();
+        saveConversations();
       }
     }
     
