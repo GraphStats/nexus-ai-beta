@@ -936,3 +936,102 @@
         currentConv.messages.push(errorMessage);
         addMessageToUI(errorMessage);
       } finally {
+        document.getElementById('typing').style.display = 'none';
+        scrollToBottom();
+        saveConversations();
+      }
+    }
+    
+    function formatMarkdown(text) {
+      text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      text = text.replace(/\n/g, '<br>');
+      return text;
+    }
+    
+    function addMessageToUI(message, delay = 0) {
+      const messagesDiv = document.getElementById('messages');
+      const messageDiv = document.createElement('div');
+      
+      messageDiv.className = `message ${message.role}`;
+      
+      const content = message.role === 'assistant' ? message.content : message.content.replace(/\n/g, '<br>');
+      
+      messageDiv.innerHTML = `
+        <div class="message-meta">
+          <span class="message-role">${message.role === 'user' ? 'You' : 'DockyAI'}</span>
+          <span>•</span>
+          <span class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+        </div>
+        <div class="message-content">${content}</div>
+      `;
+      
+      messagesDiv.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.style.opacity = '1';
+        messageDiv.style.transform = 'translateY(0)';
+      }, delay * 1000);
+      
+      scrollToBottom();
+    }
+    
+    function scrollToBottom() {
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    function initParticles() {
+      const particles = document.getElementById('particles');
+      const particleCount = 30;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.style.position = 'absolute';
+        particle.style.width = `${Math.random() * 5 + 1}px`;
+        particle.style.height = particle.style.width;
+        particle.style.background = `rgba(${Math.floor(Math.random() * 100 + 155)}, ${Math.floor(Math.random() * 100 + 155)}, 255, ${Math.random() * 0.3 + 0.1})`;
+        particle.style.borderRadius = '50%';
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        particle.style.opacity = '0';
+        
+        const duration = Math.random() * 20 + 10;
+        const delay = Math.random() * 5;
+        const keyframes = `
+          @keyframes particleAnimation${i} {
+            0% { 
+              transform: translate(0, 0); 
+              opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { 
+              transform: translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px); 
+              opacity: 0;
+            }
+          }
+        `;
+        
+        const style = document.createElement('style');
+        style.innerHTML = keyframes;
+        document.head.appendChild(style);
+        
+        particle.style.animation = `particleAnimation${i} ${duration}s linear ${delay}s infinite`;
+        
+        particles.appendChild(particle);
+        
+        setTimeout(() => {
+          particle.style.opacity = '1';
+        }, delay * 1000);
+      }
+    }
+    
+    // Initialisation
+    window.addEventListener('load', () => {
+      initParticles();
+      init();
+    });
+  </script>
+</body>
+</html>
